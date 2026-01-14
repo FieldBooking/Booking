@@ -24,7 +24,6 @@ public class InitialMigration : Migration
                          id bigint generated always as identity primary key,
 
                          sports_object_id bigint not null,
-                         client_id bigint not null,
 
                          starts_at timestamptz not null,
                          ends_at   timestamptz not null,

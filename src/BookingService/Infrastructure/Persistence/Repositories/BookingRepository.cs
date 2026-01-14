@@ -17,7 +17,7 @@ public class BookingRepository : IBookingRepository
     public async Task<Booking?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
         const string sql = """
-                           select id, sports_object_id, client_id, starts_at, ends_at, amount, status, created_at, updated_at
+                           select id, sports_object_id, starts_at, ends_at, amount, status, created_at, updated_at
                            from bookings
                            where id = @id
                            """;
@@ -42,16 +42,15 @@ public class BookingRepository : IBookingRepository
         BookingRow row = BookingMapper.ToRow(booking);
 
         const string sql = """
-                           insert into bookings (sports_object_id, client_id, starts_at, ends_at, amount, status)
-                           values (@sports_object_id, @client_id, @starts_at, @ends_at, @amount, @status)
-                           returning id, sports_object_id, client_id, starts_at, ends_at, amount, status, created_at, updated_at;
+                           insert into bookings (sports_object_id, starts_at, ends_at, amount, status)
+                           values (@sports_object_id, @starts_at, @ends_at, @amount, @status)
+                           returning id, sports_object_id, starts_at, ends_at, amount, status, created_at, updated_at;
                            """;
 
         await using NpgsqlConnection connection = await _dataSource.OpenConnectionAsync(cancellationToken);
         await using var cmd = new NpgsqlCommand(sql, connection);
 
         cmd.Parameters.Add(new NpgsqlParameter<long>("sports_object_id", row.SportsObjectId));
-        cmd.Parameters.Add(new NpgsqlParameter<long>("client_id", row.ClientId));
         cmd.Parameters.Add(new NpgsqlParameter<DateTimeOffset>("starts_at", row.StartsAt));
         cmd.Parameters.Add(new NpgsqlParameter<DateTimeOffset>("ends_at", row.EndsAt));
         cmd.Parameters.Add(new NpgsqlParameter<long>("amount", row.Amount));
@@ -75,14 +74,13 @@ public class BookingRepository : IBookingRepository
                            update bookings
                            set
                                sports_object_id = @sports_object_id,
-                               client_id        = @client_id,
                                starts_at        = @starts_at,
                                ends_at          = @ends_at,
                                amount           = @amount,
                                status           = @status,
                                updated_at       = now()
                            where id = @id
-                           returning id, sports_object_id, client_id, starts_at, ends_at, amount, status, created_at, updated_at;
+                           returning id, sports_object_id, starts_at, ends_at, amount, status, created_at, updated_at;
                            """;
 
         await using NpgsqlConnection connection = await _dataSource.OpenConnectionAsync(cancellationToken);
@@ -90,7 +88,6 @@ public class BookingRepository : IBookingRepository
 
         cmd.Parameters.Add(new NpgsqlParameter<long>("id", row.Id));
         cmd.Parameters.Add(new NpgsqlParameter<long>("sports_object_id", row.SportsObjectId));
-        cmd.Parameters.Add(new NpgsqlParameter<long>("client_id", row.ClientId));
         cmd.Parameters.Add(new NpgsqlParameter<DateTimeOffset>("starts_at", row.StartsAt));
         cmd.Parameters.Add(new NpgsqlParameter<DateTimeOffset>("ends_at", row.EndsAt));
         cmd.Parameters.Add(new NpgsqlParameter<long>("amount", row.Amount));
@@ -111,13 +108,12 @@ public class BookingRepository : IBookingRepository
         {
             Id = reader.GetInt64(0),
             SportsObjectId = reader.GetInt64(1),
-            ClientId = reader.GetInt64(2),
-            StartsAt = reader.GetFieldValue<DateTimeOffset>(3),
-            EndsAt = reader.GetFieldValue<DateTimeOffset>(4),
-            Amount = reader.GetInt64(5),
-            Status = reader.GetString(6),
-            CreatedAt = reader.GetFieldValue<DateTimeOffset>(7),
-            UpdatedAt = reader.GetFieldValue<DateTimeOffset>(8),
+            StartsAt = reader.GetFieldValue<DateTimeOffset>(2),
+            EndsAt = reader.GetFieldValue<DateTimeOffset>(3),
+            Amount = reader.GetInt64(4),
+            Status = reader.GetString(5),
+            CreatedAt = reader.GetFieldValue<DateTimeOffset>(6),
+            UpdatedAt = reader.GetFieldValue<DateTimeOffset>(7),
         };
     }
 }

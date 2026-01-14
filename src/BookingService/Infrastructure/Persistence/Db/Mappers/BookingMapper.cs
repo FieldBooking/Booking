@@ -15,7 +15,6 @@ public static class BookingMapper
         return Booking.Build(
             id: row.Id,
             sportsObjectId: row.SportsObjectId,
-            clientId: row.ClientId,
             startsAt: row.StartsAt,
             endsAt: row.EndsAt,
             amount: row.Amount,
@@ -31,7 +30,6 @@ public static class BookingMapper
         {
             Id = booking.Id,
             SportsObjectId = booking.SportsObjectId,
-            ClientId = booking.ClientId,
             StartsAt = booking.StartsAt,
             EndsAt = booking.EndsAt,
             Amount = booking.Amount,

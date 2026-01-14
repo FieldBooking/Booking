@@ -6,8 +6,6 @@ public class BookingRow
 
     public long SportsObjectId { get; set; }
 
-    public long ClientId { get; set; }
-
     public DateTimeOffset StartsAt { get; set; }
 
     public DateTimeOffset EndsAt { get; set; }
