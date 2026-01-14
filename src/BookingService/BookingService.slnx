@@ -1,0 +1,3 @@
+﻿<Solution>
+  <Project Path="BookingService\BookingService.csproj" Type="Classic C#" />
+</Solution>
