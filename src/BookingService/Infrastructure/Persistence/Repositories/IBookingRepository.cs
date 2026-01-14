@@ -6,8 +6,7 @@ public interface IBookingRepository
 {
     Task<Booking?> GetByIdAsync(long id, CancellationToken cancellationToken = default);
 
-    Task<Booking> AddAsync(Booking booking, CancellationToken cancellationToken = default);
+    Task<Booking> CreateAsync(Booking booking, CancellationToken cancellationToken = default);
 
     Task<Booking> UpdateAsync(Booking booking, CancellationToken cancellationToken = default);
-    
 }

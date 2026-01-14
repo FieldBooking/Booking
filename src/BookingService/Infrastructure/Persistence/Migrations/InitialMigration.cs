@@ -7,41 +7,39 @@ public class InitialMigration : Migration
 {
     public override void Up()
     {
-        Execute.Sql($"""
+        Execute.Sql("""
 
-                     create type booking_status as enum (
+                    create type booking_status as enum (
                         'Created',
-                         'PaymentInProgress',
-                         'CancelRequestedDuringPayment',
-                         'CancelledNoPayment',
-                         'Paid'
-                     );
+                        'PaymentInProgress',
+                        'CancelRequestedDuringPayment',
+                        'CancelledNoPayment',
+                        'Paid'
+                    );
 
-                     create table if not exists booking
-                     (
-                         
-                         
-                         id bigint generated always as identity primary key,
-
-                         sports_object_id bigint not null,
-
-                         starts_at timestamptz not null,
-                         ends_at   timestamptz not null,
-                     
-
-                         amount bigint not null,
-                         status booking_status  not null,
-
-                         created_at timestamptz not null default now(),
-                         updated_at timestamptz not null default now(),
-                     )
-                     """);
+                    create table if not exists bookings
+                    (
+                        
+                        
+                        id bigint generated always as identity primary key,
+                    
+                        sports_object_id bigint not null,
+                    
+                        starts_at timestamptz not null,
+                        ends_at   timestamptz not null,
+                    
+                    
+                        amount bigint not null,
+                        status booking_status  not null,
+                    
+                        created_at timestamptz not null default now(),
+                        updated_at timestamptz not null default now()
+                    )
+                    """);
     }
 
     public override void Down()
     {
-        Execute.Sql($"""
-                    drop table if exists booking
-                    """);
+        Execute.Sql("""drop table if exists booking""");
     }
 }

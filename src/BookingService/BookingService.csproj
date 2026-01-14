@@ -9,43 +9,21 @@
     <ItemGroup>
         <PackageReference Include="FluentMigrator"/>
         <PackageReference Include="Grpc.AspNetCore"/>
-        <PackageReference Include="Npgsql" />
+        <Protobuf Include="Api/Grpc/Protos/booking_service.proto" GrpcServices="Server" />
+        <PackageReference Include="Npgsql"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Api\Grpc\" />
-      <Folder Include="Api\Middleware\" />
-      <Folder Include="Application\" />
-      <Folder Include="Infrastructure\Persistence\" />
+        <Folder Include="Api\Middleware\"/>
+        <Folder Include="Application\Events\BeginPayment\"/>
+        <Folder Include="Application\Events\CancelBooking\"/>
+        <Folder Include="Application\Events\CreateBooking\"/>
+        <Folder Include="Infrastructure\Persistence\"/>
+        <Folder Include="obj\" />
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="obj\BookingService.csproj.nuget.dgspec.json" />
-      <Content Include="obj\Debug\net9.0\12fbc7ffe642ca7e_greet.protodep" />
-      <Content Include="obj\Debug\net9.0\apphost.exe" />
-      <Content Include="obj\Debug\net9.0\BookingS.1E4CF696.Up2Date" />
-      <Content Include="obj\Debug\net9.0\BookingService.AssemblyInfoInputs.cache" />
-      <Content Include="obj\Debug\net9.0\BookingService.assets.cache" />
-      <Content Include="obj\Debug\net9.0\BookingService.csproj.AssemblyReference.cache" />
-      <Content Include="obj\Debug\net9.0\BookingService.csproj.FileListAbsolute.txt" />
-      <Content Include="obj\Debug\net9.0\BookingService.dll" />
-      <Content Include="obj\Debug\net9.0\BookingService.genruntimeconfig.cache" />
-      <Content Include="obj\Debug\net9.0\BookingService.MvcApplicationPartsAssemblyInfo.cache" />
-      <Content Include="obj\Debug\net9.0\BookingService.pdb" />
-      <Content Include="obj\Debug\net9.0\rjsmcshtml.dswa.cache.json" />
-      <Content Include="obj\Debug\net9.0\rjsmrazor.dswa.cache.json" />
-      <Content Include="obj\Debug\net9.0\rpswa.dswa.cache.json" />
-      <Content Include="obj\Debug\net9.0\staticwebassets.build.endpoints.json" />
-      <Content Include="obj\Debug\net9.0\staticwebassets.build.json" />
-      <Content Include="obj\Debug\net9.0\staticwebassets.build.json.cache" />
-      <Content Include="obj\project.assets.json" />
-      <Content Include="obj\project.packagespec.json" />
-      <Content Include="obj\rider.project.model.nuget.info" />
-      <Content Include="obj\rider.project.restore.info" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Include="obj\Debug\net9.0\.NETCoreApp,Version=v9.0.AssemblyAttributes.cs" />
+        <Compile Include="obj\Debug\net9.0\.NETCoreApp,Version=v9.0.AssemblyAttributes.cs"/>
     </ItemGroup>
 
 </Project>

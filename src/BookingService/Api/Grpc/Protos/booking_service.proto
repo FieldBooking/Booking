@@ -1,0 +1,48 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "GrpcService";
+
+package booking;
+
+import "google/protobuf/timestamp.proto";
+
+service BookingGrpc {
+    rpc GetBooking (GetBookingRequest) returns (GetBookingResponse);
+    rpc CreateBooking (CreateBookingRequest) returns (CreateBookingResponse);
+    rpc CancelBooking (CancelBookingRequest) returns (CancelBookingResponse);
+}
+
+message TimeInterval {
+    google.protobuf.Timestamp starts_at = 1;
+    google.protobuf.Timestamp ends_at = 2;
+}
+
+enum BookingStatus {
+    BOOKING_STATUS_UNSPECIFIED = 0;
+    BOOKING_STATUS_CREATED = 1;
+    BOOKING_STATUS_PAYMENT_IN_PROGRESS = 2;
+    BOOKING_STATUS_CANCEL_REQUESTED_DURING_PAYMENT = 3;
+    BOOKING_STATUS_CANCELLED_NO_PAYMENT = 4;
+    BOOKING_STATUS_PAID = 5;
+}
+
+message Booking {
+    int64 id = 1;
+    int64 sports_object_id = 2;
+    TimeInterval interval = 3;
+    int64 amount = 4;
+    BookingStatus status = 5;
+}
+
+message GetBookingRequest { int64 id = 1; }
+message GetBookingResponse { Booking booking = 1; }
+
+message CreateBookingRequest {
+    int64 sports_object_id = 1;
+    TimeInterval interval = 2;
+    int64 amount = 3;
+}
+message CreateBookingResponse { Booking booking = 1; }
+
+message CancelBookingRequest { int64 id = 1; }
+message CancelBookingResponse { Booking booking = 1; }

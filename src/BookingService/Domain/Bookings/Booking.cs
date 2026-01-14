@@ -2,6 +2,21 @@ namespace BookingService.Domain.Bookings;
 
 public class Booking
 {
+    private Booking() { }
+
+    private Booking(long sportsObjectId, DateTimeOffset startsAt, DateTimeOffset endsAt, long amount)
+    {
+        if (endsAt <= startsAt) throw new ArgumentException("Invalid time for start time and end time");
+        if (amount < 0) throw new ArgumentException("Amount must be non-negative.");
+
+        SportsObjectId = sportsObjectId;
+        StartsAt = startsAt;
+        EndsAt = endsAt;
+        Amount = amount;
+
+        Status = BookingStatus.Created;
+    }
+
     public long Id { get; private set; }
 
     public long SportsObjectId { get; private set; }
@@ -14,22 +29,6 @@ public class Booking
 
     public long Amount { get; private set; }
 
-    private Booking() { }
-
-    private Booking(long id, long sportsObjectId, DateTimeOffset startsAt, DateTimeOffset endsAt, long amount)
-    {
-        if (endsAt <= startsAt) throw new ArgumentException("Invalid time for start time and end time");
-        if (amount < 0) throw new ArgumentException("Amount must be non-negative.");
-
-        Id = id;
-        SportsObjectId = sportsObjectId;
-        StartsAt = startsAt;
-        EndsAt = endsAt;
-        Amount = amount;
-
-        Status = BookingStatus.Created;
-    }
-
     public static Booking Build(
         long id,
         long sportsObjectId,
@@ -38,7 +37,7 @@ public class Booking
         long amount,
         BookingStatus status)
     {
-        if (endsAt >= startsAt) throw new ArgumentException("Invalid time for start time and end time");
+        if (endsAt <= startsAt) throw new ArgumentException("Invalid time for start time and end time");
         if (amount < 0) throw new ArgumentException("Amount must be non-negative.");
 
         ValidateSlot(startsAt, endsAt);
@@ -53,10 +52,10 @@ public class Booking
             Status = status,
         };
     }
-    
-    public static Booking Create(long id, long sportsObjectId, DateTimeOffset startsAt, DateTimeOffset endsAt, long amount)
+
+    public static Booking Create(long sportsObjectId, DateTimeOffset startsAt, DateTimeOffset endsAt, long amount)
     {
-        return new Booking(id, sportsObjectId, startsAt, endsAt, amount);
+        return new Booking(sportsObjectId, startsAt, endsAt, amount);
     }
 
     public void StartPayment()

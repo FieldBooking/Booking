@@ -12,7 +12,7 @@ public class BookingRow
 
     public long Amount { get; set; }
 
-    public required string Status { get; set; }
+    public Domain.Bookings.BookingStatus Status { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
 
