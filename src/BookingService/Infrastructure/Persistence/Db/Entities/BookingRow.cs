@@ -12,8 +12,6 @@ public class BookingRow
 
     public long Amount { get; set; }
 
-    public int Version { get; set; }
-
     public required string Status { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }

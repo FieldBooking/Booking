@@ -27,8 +27,7 @@ public class InitialMigration : Migration
 
                          starts_at timestamptz not null,
                          ends_at   timestamptz not null,
-                         
-                         version int not null,
+                     
 
                          amount bigint not null,
                          status booking_status  not null,
