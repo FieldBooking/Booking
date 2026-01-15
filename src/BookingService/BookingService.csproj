@@ -10,6 +10,7 @@
         <PackageReference Include="FluentMigrator"/>
         <PackageReference Include="Grpc.AspNetCore"/>
         <Protobuf Include="Api/Grpc/Protos/booking_service.proto" GrpcServices="Server" />
+        <Protobuf Include="Infrastructure/Grpc/Protos/sports_objects_booking.proto" GrpcServices="Client" />
         <PackageReference Include="Npgsql"/>
     </ItemGroup>
 

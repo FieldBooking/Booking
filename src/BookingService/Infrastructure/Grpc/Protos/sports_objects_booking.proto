@@ -1,0 +1,31 @@
+﻿syntax = "proto3";
+
+package sportsobjects.booking;
+
+option csharp_namespace = "SportsObjectsService";
+
+service SportsObjectsBookingService {
+    rpc ObjectForBooking (ObjectForBookingRequest)
+            returns (ObjectForBookingResponse);
+}
+
+message ObjectForBookingRequest {
+    int64 sport_object_id = 1;
+    int32 day_of_week = 2;
+    string start_time = 3;
+    string end_time = 4;
+}
+
+enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_OK = 1;
+    STATUS_NOT_FOUND = 2;
+    STATUS_INACTIVE = 3;
+    STATUS_OUT_OF_SCHEDULE = 4;
+}
+
+message ObjectForBookingResponse {
+    Status object_status = 1;
+    int64 sport_object_id = 2;
+    double price_per_hour = 3;
+}
