@@ -10,6 +10,7 @@ service BookingGrpc {
     rpc GetBooking (GetBookingRequest) returns (GetBookingResponse);
     rpc CreateBooking (CreateBookingRequest) returns (CreateBookingResponse);
     rpc CancelBooking (CancelBookingRequest) returns (CancelBookingResponse);
+    rpc StartPayment (StartPaymentRequest) returns (StartPaymentResponse);
 }
 
 message TimeInterval {
@@ -34,15 +35,22 @@ message Booking {
     BookingStatus status = 5;
 }
 
-message GetBookingRequest { int64 id = 1; }
-message GetBookingResponse { Booking booking = 1; }
+message GetBookingRequest {int64 id = 1;}
+message GetBookingResponse {Booking booking = 1;}
 
 message CreateBookingRequest {
     int64 sports_object_id = 1;
     TimeInterval interval = 2;
-    int64 amount = 3;
 }
-message CreateBookingResponse { Booking booking = 1; }
+message CreateBookingResponse {Booking booking = 1;}
 
-message CancelBookingRequest { int64 id = 1; }
-message CancelBookingResponse { Booking booking = 1; }
+message CancelBookingRequest {int64 id = 1;}
+message CancelBookingResponse {Booking booking = 1;}
+
+
+message StartPaymentRequest {
+    int64 id = 1;
+    string correlation_id = 2;
+    string io_channel = 3;
+}
+message StartPaymentResponse {Booking booking = 1;}

@@ -1,3 +1,5 @@
+using BookingService.Domain.Bookings;
+
 namespace BookingService.Infrastructure.Persistence.Db.Entities;
 
 public class BookingRow
@@ -12,7 +14,11 @@ public class BookingRow
 
     public long Amount { get; set; }
 
-    public Domain.Bookings.BookingStatus Status { get; set; }
+    public BookingStatus Status { get; set; }
+
+    public string? PaymentCorrelationId { get; set; }
+
+    public string? PaymentIoChannel { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
 

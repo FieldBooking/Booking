@@ -39,11 +39,11 @@ public class SportsObjectsBookingGrpcClient : ISportsObjectsClient
             Status.NotFound => SportsObjectBookingStatus.NotFound,
             Status.Inactive => SportsObjectBookingStatus.Inactive,
             Status.OutOfSchedule => SportsObjectBookingStatus.OutOfSchedule,
-             _ => SportsObjectBookingStatus.OutOfSchedule,
+            _ => SportsObjectBookingStatus.OutOfSchedule,
         };
         return new SportsObjectForBookingResult(
-            Status: status,
-            SportObjectId: sportObjectId,
-            PricePerHour: (decimal)response.PricePerHour);
+            status,
+            sportObjectId,
+            (decimal)response.PricePerHour);
     }
 }

@@ -1,4 +1,5 @@
-﻿using BookingService.Application.Interfaces;
+﻿using BookingService.Application.Exceptions;
+using BookingService.Application.Interfaces;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using GrpcService;
@@ -25,26 +26,71 @@ public class BookingGrpcService : BookingGrpc.BookingGrpcBase
 
     public override async Task<CreateBookingResponse> CreateBooking(CreateBookingRequest request, ServerCallContext context)
     {
+        if (request.Interval is null)
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "interval is required"));
+
         var startsAt = request.Interval.StartsAt.ToDateTimeOffset();
         var endsAt = request.Interval.EndsAt.ToDateTimeOffset();
 
-        // проверить что доступен объект
         try
         {
-            Domain.Bookings.Booking saved = await _app.CreateAsync(request.SportsObjectId, startsAt, endsAt, request.Amount, context.CancellationToken);
+            Domain.Bookings.Booking saved = await _app.CreateAsync(
+                request.SportsObjectId,
+                startsAt,
+                endsAt,
+                context.CancellationToken);
+
             return new CreateBookingResponse { Booking = ToProto(saved) };
         }
-        catch (Exception ex) when (ex is ArgumentException)
+        catch (SlotBusyException)
         {
-            // если домен кинул ArgumentException на валидации
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "slot is busy"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, ex.Message));
+        }
+        catch (ArgumentException ex)
+        {
             throw new RpcException(new Status(StatusCode.InvalidArgument, ex.Message));
         }
     }
 
     public override async Task<CancelBookingResponse> CancelBooking(CancelBookingRequest request, ServerCallContext context)
     {
-        Domain.Bookings.Booking updated = await _app.CancelAsync(request.Id, context.CancellationToken);
-        return new CancelBookingResponse { Booking = ToProto(updated) };
+        try
+        {
+            Domain.Bookings.Booking updated = await _app.CancelAsync(request.Id, context.CancellationToken);
+            return new CancelBookingResponse { Booking = ToProto(updated) };
+        }
+        catch (BookingNotFoundException)
+        {
+            throw new RpcException(new Status(StatusCode.NotFound, "Booking not found"));
+        }
+        catch (InvalidBookingStateException ex)
+        {
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, ex.Message));
+        }
+    }
+
+    public override async Task<StartPaymentResponse> StartPayment(StartPaymentRequest request, ServerCallContext context)
+    {
+        try
+        {
+            Domain.Bookings.Booking updated = await _app.StartPaymentAsync(request.Id, context.CancellationToken);
+            return new StartPaymentResponse
+            {
+                Booking = ToProto(updated),
+            };
+        }
+        catch (BookingNotFoundException)
+        {
+            throw new RpcException(new Status(StatusCode.NotFound, "Booking not found"));
+        }
+        catch (InvalidBookingStateException ex)
+        {
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, ex.Message));
+        }
     }
 
     private static Booking ToProto(Domain.Bookings.Booking booking)

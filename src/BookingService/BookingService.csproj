@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Confluent.Kafka" />
         <PackageReference Include="FluentMigrator"/>
         <PackageReference Include="Grpc.AspNetCore"/>
         <Protobuf Include="Api/Grpc/Protos/booking_service.proto" GrpcServices="Server" />
@@ -16,9 +17,6 @@
 
     <ItemGroup>
         <Folder Include="Api\Middleware\"/>
-        <Folder Include="Application\Events\BeginPayment\"/>
-        <Folder Include="Application\Events\CancelBooking\"/>
-        <Folder Include="Application\Events\CreateBooking\"/>
         <Folder Include="Infrastructure\Persistence\"/>
         <Folder Include="obj\" />
     </ItemGroup>

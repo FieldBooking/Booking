@@ -1,3 +1,5 @@
+using BookingService.Application.Exceptions;
+using BookingService.Application.Interfaces;
 using BookingService.Domain.Bookings;
 using BookingService.Infrastructure.Persistence.Db.Entities;
 using Npgsql;
@@ -43,22 +45,32 @@ public class BookingRepository : IBookingRepository
                            values (@sports_object_id, @starts_at, @ends_at, @amount, @status)
                            returning id, sports_object_id, starts_at, ends_at, amount, status, created_at, updated_at;
                            """;
+        try
+        {
+            await using NpgsqlConnection connection = await _dataSource.OpenConnectionAsync(cancellationToken);
+            await using var cmd = new NpgsqlCommand(sql, connection);
 
-        await using NpgsqlConnection connection = await _dataSource.OpenConnectionAsync(cancellationToken);
-        await using var cmd = new NpgsqlCommand(sql, connection);
+            cmd.Parameters.Add(new NpgsqlParameter<long>("sports_object_id", booking.SportsObjectId));
+            cmd.Parameters.Add(new NpgsqlParameter<DateTimeOffset>("starts_at", booking.StartsAt));
+            cmd.Parameters.Add(new NpgsqlParameter<DateTimeOffset>("ends_at", booking.EndsAt));
+            cmd.Parameters.Add(new NpgsqlParameter<long>("amount", booking.Amount));
+            cmd.Parameters.Add(new NpgsqlParameter<BookingStatus>("status", BookingStatus.Created));
 
-        cmd.Parameters.Add(new NpgsqlParameter<long>("sports_object_id", booking.SportsObjectId));
-        cmd.Parameters.Add(new NpgsqlParameter<DateTimeOffset>("starts_at", booking.StartsAt));
-        cmd.Parameters.Add(new NpgsqlParameter<DateTimeOffset>("ends_at", booking.EndsAt));
-        cmd.Parameters.Add(new NpgsqlParameter<long>("amount", booking.Amount));
-        cmd.Parameters.Add(new NpgsqlParameter<BookingStatus>("status", BookingStatus.Created));
+            await using NpgsqlDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+                throw new InvalidOperationException("Insert failed: no row returned.");
 
-        await using NpgsqlDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken))
-            throw new InvalidOperationException("Insert failed: no row returned.");
-
-        BookingRow inserted = ReadRow(reader);
-        return ToDomain(inserted);
+            BookingRow inserted = ReadRow(reader);
+            return ToDomain(inserted);
+        }
+        catch (PostgresException ex) when (ex.SqlState == "23P01")
+        {
+            throw new SlotBusyException(
+                booking.SportsObjectId,
+                booking.StartsAt,
+                booking.EndsAt,
+                ex);
+        }
     }
 
     public async Task<Booking> UpdateAsync(Booking booking, CancellationToken cancellationToken = default)
@@ -94,6 +106,72 @@ public class BookingRepository : IBookingRepository
 
         BookingRow updated = ReadRow(reader);
         return ToDomain(updated);
+    }
+
+    public async Task<Booking?> StartPaymentAsync(long bookingId, string correlationId, string ioChannel, CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+                           update bookings
+                           set
+                             status = @status,
+                             payment_correlation_id = @corr,
+                             payment_io_channel = @io,
+                             updated_at = now()
+                           where id = @id and status = 'Created'::booking_status
+                           returning id, sports_object_id, starts_at, ends_at, amount, status, created_at, updated_at;
+                           """;
+
+        await using NpgsqlConnection conn = await _dataSource.OpenConnectionAsync(cancellationToken);
+        await using var cmd = new NpgsqlCommand(sql, conn);
+
+        cmd.Parameters.Add(new NpgsqlParameter<long>("id", bookingId));
+        cmd.Parameters.Add(new NpgsqlParameter<BookingStatus>("status", BookingStatus.PaymentInProgress));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("corr", correlationId));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("io", ioChannel));
+
+        await using NpgsqlDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            return null;
+
+        BookingRow row = ReadRow(reader);
+        return ToDomain(row);
+    }
+
+    public async Task<Booking?> ApplyPaymentResultAsync(
+        long bookingId,
+        string correlationId,
+        string ioChannel,
+        bool confirmed,
+        CancellationToken cancellationToken = default)
+    {
+        BookingStatus newStatus = confirmed ? BookingStatus.Paid : BookingStatus.CancelledNoPayment;
+
+        const string sql = """
+                           update bookings
+                           set
+                             status = @new_status,
+                             updated_at = now()
+                           where id = @id
+                             and payment_correlation_id = @corr
+                             and payment_io_channel = @io
+                             and status in ('PaymentInProgress'::booking_status, 'CancelRequestedDuringPayment'::booking_status)
+                           returning id, sports_object_id, starts_at, ends_at, amount, status, created_at, updated_at;
+                           """;
+
+        await using NpgsqlConnection conn = await _dataSource.OpenConnectionAsync(cancellationToken);
+        await using var cmd = new NpgsqlCommand(sql, conn);
+
+        cmd.Parameters.Add(new NpgsqlParameter<long>("id", bookingId));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("corr", correlationId));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("io", ioChannel));
+        cmd.Parameters.Add(new NpgsqlParameter<BookingStatus>("new_status", newStatus));
+
+        await using NpgsqlDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            return null;
+
+        BookingRow row = ReadRow(reader);
+        return ToDomain(row);
     }
 
     private static BookingRow ReadRow(NpgsqlDataReader reader)

@@ -1,3 +1,5 @@
+using BookingService.Application.Exceptions;
+
 namespace BookingService.Domain.Bookings;
 
 public class Booking
@@ -58,7 +60,7 @@ public class Booking
         return new Booking(sportsObjectId, startsAt, endsAt, amount);
     }
 
-    public void StartPayment()
+    public void MarkPaymentInProgress()
     {
         if (Status != BookingStatus.Created) throw new InvalidOperationException($"Cannot start payment from status {Status}.");
         Status = BookingStatus.PaymentInProgress;
@@ -71,7 +73,7 @@ public class Booking
             case BookingStatus.CancelledNoPayment:
                 break;
             case BookingStatus.Paid:
-                throw new InvalidOperationException("Cannot cancel a paid booking.");
+                throw new InvalidBookingStateException(Id, Status);
             case BookingStatus.Created:
                 Status = BookingStatus.CancelledNoPayment;
                 break;
@@ -100,25 +102,6 @@ public class Booking
         Status = Status == BookingStatus.CancelRequestedDuringPayment
             ? BookingStatus.CancelledNoPayment
             : BookingStatus.Created;
-    }
-
-    public void Reschedule(DateTimeOffset startsAt, DateTimeOffset endsAt)
-    {
-        if (Status != BookingStatus.Created)
-            throw new InvalidOperationException("Cannot reschedule after payment has started.");
-
-        ValidateSlot(startsAt, endsAt);
-        StartsAt = startsAt;
-        EndsAt = endsAt;
-    }
-
-    public void ChangeAmount(long amount)
-    {
-        if (Status != BookingStatus.Created)
-            throw new InvalidOperationException("Cannot change amount after payment has started.");
-
-        if (amount < 0) throw new InvalidOperationException("Amount must be non-negative.");
-        Amount = amount;
     }
 
     private static void ValidateSlot(DateTimeOffset startsAt, DateTimeOffset endsAt)
