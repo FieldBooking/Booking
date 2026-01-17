@@ -1,7 +1,6 @@
-﻿using BookingService.Application.Dtos;
+﻿using BookingService.Infrastructure.Kafka.Message;
 using Confluent.Kafka;
 using Microsoft.Extensions.Options;
-using System.Text;
 using System.Text.Json;
 
 namespace BookingService.Infrastructure.Kafka.Producer;
@@ -24,31 +23,19 @@ public class PaymentRequestedProducerService : IPaymentRequestedProducerService
         _producer = new ProducerBuilder<string, string>(producerConfig).Build();
     }
 
-    public async Task SendEventAsync(PaymentRequestedEvent requestedEvent, CancellationToken cancellationToken)
+    public async Task SendEventAsync(PaymentRequestedEvent message, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(requestedEvent);
-        string key = requestedEvent.BookingId.ToString();
-        string value = JsonSerializer.Serialize(requestedEvent, _jsonOptions);
+        string payload = JsonSerializer.Serialize(message, _jsonOptions);
 
-        var message = new Message<string, string>
+        var kafkaMessage = new Message<string, string>
         {
-            Key = key,
-            Value = value,
-            Headers =
-            [
-                new Header("event-type", Encoding.UTF8.GetBytes(requestedEvent.EventType)),
-                new Header("correlation-id", Encoding.UTF8.GetBytes(requestedEvent.CorrelationId)),
-                new Header("io-channel", Encoding.UTF8.GetBytes(requestedEvent.IoChannel)),
-            ],
+            Key = message.CorrelationId,
+            Value = payload,
         };
 
-        try
-        {
-            await _producer.ProduceAsync(_options.PaymentRequestTopic, message, cancellationToken);
-        }
-        catch (ProduceException<string, string> ex)
-        {
-            throw new ApplicationException(ex.Message);
-        }
+        await _producer.ProduceAsync(
+            _options.PaymentRequestTopic,
+            kafkaMessage,
+            cancellationToken);
     }
 }

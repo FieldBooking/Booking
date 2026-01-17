@@ -7,13 +7,12 @@ namespace BookingService.Infrastructure.Kafka.Consumer;
 public class PaymentResultHandler : IKafkaMessageHandler
 {
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly IBookingAppService _booking;
 
-    private readonly IServiceProvider _sp;
-
-    public PaymentResultHandler(IServiceProvider sp)
+    public PaymentResultHandler(IBookingAppService booking)
     {
         _jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        _sp = sp;
+        _booking = booking;
     }
 
     public async Task HandleAsync(string topic, string? key, string value, CancellationToken cancellationToken)
@@ -29,12 +28,7 @@ public class PaymentResultHandler : IKafkaMessageHandler
         };
         if (confirmed is null) return;
 
-        using IServiceScope scope = _sp.CreateScope();
-        IBookingInboxRepository inbox = scope.ServiceProvider.GetRequiredService<IBookingInboxRepository>();
-        IBookingRepository repo = scope.ServiceProvider.GetRequiredService<IBookingRepository>();
-
-        await inbox.InsertAsync(evt.EventType, evt.BookingId, evt.CorrelationId, evt.IoChannel, cancellationToken);
-
-        await repo.ApplyPaymentResultAsync(evt.BookingId, evt.CorrelationId, evt.IoChannel, confirmed.Value, cancellationToken);
+        // await inbox.InsertAsync(evt.EventType, evt.BookingId, evt.CorrelationId, evt.IoChannel, cancellationToken);
+        await _booking.ApplyOrCancelPaymentForceAsync(evt.BookingId, evt.CorrelationId, evt.IoChannel, confirmed.Value, cancellationToken);
     }
 }

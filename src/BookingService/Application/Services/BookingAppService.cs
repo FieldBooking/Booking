@@ -1,7 +1,10 @@
 ﻿using BookingService.Application.Dtos;
+using BookingService.Application.Dtos.Response;
 using BookingService.Application.Exceptions;
 using BookingService.Application.Interfaces;
 using BookingService.Domain.Bookings;
+using BookingService.Infrastructure.Grpc.Services;
+using BookingService.Infrastructure.Kafka.Message;
 using BookingService.Infrastructure.Kafka.Producer;
 
 namespace BookingService.Application.Services;
@@ -11,49 +14,51 @@ public sealed class BookingAppService : IBookingAppService
     private const string IoChannel = "payments.input|payments.output";
     private readonly IPaymentRequestedProducerService _producer;
     private readonly IBookingRepository _repo;
-    private readonly ISportsObjectsClient _sports;
+    private readonly SportsObjectsBookingGrpcClient _sports;
 
-    public BookingAppService(IBookingRepository repo, ISportsObjectsClient sports, IPaymentRequestedProducerService producer)
+    public BookingAppService(IBookingRepository repo, SportsObjectsBookingGrpcClient sports, IPaymentRequestedProducerService producer)
     {
         _repo = repo;
         _sports = sports;
         _producer = producer;
     }
 
-    public Task<Booking?> GetAsync(long id, CancellationToken cancellationToken)
+    public async Task<Booking> GetAsync(long id, CancellationToken cancellationToken)
     {
-        return _repo.GetByIdAsync(id, cancellationToken);
+        return await _repo.GetByIdAsync(id, cancellationToken) ?? throw new BookingNotFoundException(id);
     }
 
-    public async Task<Booking> CreateAsync(long sportsObjectId, DateTimeOffset startsAt, DateTimeOffset endsAt, CancellationToken cancellationToken)
+    public async Task<Booking> CreateAsync(long sportsObjectId, DateOnly dateOnly, TimeOnly startTime, TimeOnly endTime, CancellationToken cancellationToken)
     {
-        SportsObjectForBookingResult obj = await _sports.ObjectForBookingAsync(sportsObjectId, startsAt, endsAt, cancellationToken);
+        if (startTime >= endTime)
+            throw new ArgumentException("startTime must be less than endTime");
+
+        var startsAt = new DateTimeOffset(dateOnly.Year, dateOnly.Month, dateOnly.Day, startTime.Hour, startTime.Minute, 0, TimeSpan.Zero);
+        var endsAt = new DateTimeOffset(dateOnly.Year, dateOnly.Month, dateOnly.Day, endTime.Hour, endTime.Minute, 0, TimeSpan.Zero);
+
+        int dayOfWeek = (((int)startsAt.DayOfWeek + 6) % 7) + 1;
+
+        SportsObjectForBookingResult obj = await _sports.ObjectForBookingAsync(sportsObjectId, dayOfWeek, startTime.ToString(), endTime.ToString(), cancellationToken);
 
         if (obj.Status != SportsObjectBookingStatus.Ok)
+        {
             throw new InvalidOperationException($"Sport object is not available: {obj.Status}");
+        }
 
-        double minutes = (endsAt - startsAt).TotalMinutes;
-
-        long amount = (long)Math.Ceiling(
-            (long)obj.PricePerHour * minutes / 60.0);
+        decimal minutes = (decimal)(endsAt - startsAt).TotalMinutes;
+        long amount = (long)Math.Ceiling(obj.PricePerHour * minutes / 60m);
         var booking = Booking.Create(sportsObjectId, startsAt, endsAt, amount);
+
         return await _repo.CreateAsync(booking, cancellationToken);
     }
 
     public async Task<Booking> CancelAsync(long id, CancellationToken cancellationToken)
     {
-        Booking? booking = await _repo.GetByIdAsync(id, cancellationToken);
-        if (booking is null)
-            throw new BookingNotFoundException(id);
-
+        // через ручка достыпны только при создании брони(до оплаты)
+        Booking booking = await GetAsync(id, cancellationToken);
         if (booking.Status == BookingStatus.CancelledNoPayment)
         {
             return booking;
-        }
-
-        if (booking.Status != BookingStatus.Created)
-        {
-            throw new InvalidBookingStateException(id, booking.Status, "Cannot cancel booking after payment has started");
         }
 
         booking.RequestCancel();
@@ -61,26 +66,38 @@ public sealed class BookingAppService : IBookingAppService
         return await _repo.UpdateAsync(booking, cancellationToken);
     }
 
-    public async Task<Booking> StartPaymentAsync(long bookingId, CancellationToken cancellationToken)
+    public async Task<Booking> ApplyOrCancelPaymentForceAsync(
+        long bookingId,
+        string correlationId,
+        string ioChannel,
+        bool confirmed,
+        CancellationToken cancellationToken)
     {
-        string corr = Guid.NewGuid().ToString();
+        return await _repo.ApplyPaymentResultAsync(bookingId, correlationId, ioChannel, confirmed, cancellationToken) ?? throw new InvalidOperationException("Booking not found or cannot apply payment result");
+    }
 
-        Booking? updated = await _repo.StartPaymentAsync(bookingId, corr, IoChannel, cancellationToken);
-        if (updated is null)
-            throw new InvalidOperationException("Booking not found or cannot start payment from current status");
+    public async Task<StartPaymentResponse> StartPaymentAsync(
+        long bookingId,
+        CancellationToken cancellationToken)
+    {
+        string correlationId = Guid.NewGuid().ToString();
+
+        Booking updated = await _repo.StartPaymentAsync(bookingId, correlationId, IoChannel, cancellationToken) ?? throw new InvalidOperationException("Booking not found or cannot start payment");
 
         await _producer.SendEventAsync(
             new PaymentRequestedEvent(
-                "payment.requested",
-                corr,
-                IoChannel,
-                updated.Id,
-                updated.SportsObjectId,
-                updated.Amount,
-                updated.StartsAt,
-                updated.EndsAt),
+                EventType: "payment.requested",
+                CorrelationId: correlationId,
+                IoChannel: IoChannel,
+                BookingId: updated.Id,
+                SportsObjectId: updated.SportsObjectId,
+                Amount: updated.Amount,
+                StartsAt: updated.StartsAt,
+                EndsAt: updated.EndsAt),
             cancellationToken);
 
-        return updated;
+        return new StartPaymentResponse(
+            updated.Id,
+            correlationId);
     }
 }

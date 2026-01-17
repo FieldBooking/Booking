@@ -6,7 +6,7 @@ public class KafkaOptions
 
     public string PaymentRequestTopic { get; set; } = "payments.input";
 
-    public string PaymentResultTopic { get; set; } = "payment.output";
+    public string PaymentResultTopic { get; set; } = "payments.output";
 
     public string PaymentResultConsumerGroupId { get; set; } = "booking-service.payments-output";
 }

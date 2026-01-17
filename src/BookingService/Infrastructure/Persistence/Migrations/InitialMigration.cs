@@ -11,11 +11,11 @@ public class InitialMigration : Migration
                     create extension if not exists btree_gist;
 
                     create type booking_status as enum (
-                        'Created',
-                        'PaymentInProgress',
-                        'CancelRequestedDuringPayment',
-                        'CancelledNoPayment',
-                        'Paid'
+                        'created',
+                        'payment_in_progress',
+                        'cancel_requested_during_payment',
+                        'cancelled_no_payment',
+                        'paid'
                     );
 
                     create table if not exists bookings
@@ -62,12 +62,16 @@ public class InitialMigration : Migration
                       sports_object_id with =,
                       tstzrange(starts_at, ends_at, '[)') with &&
                     )
-                    where (status <> 'CancelledNoPayment');
+                    where (status <> 'cancelled_no_payment');
                     """);
     }
 
     public override void Down()
     {
-        Execute.Sql("""drop table if exists booking""");
+        Execute.Sql("""
+                        drop table if exists booking_inbox;
+                        drop table if exists bookings;
+                        drop type if exists booking_status;
+                    """);
     }
 }

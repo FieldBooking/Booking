@@ -1,10 +1,9 @@
 ﻿using BookingService.Application.Dtos;
-using BookingService.Application.Interfaces;
 using SportsObjectsService;
 
 namespace BookingService.Infrastructure.Grpc.Services;
 
-public class SportsObjectsBookingGrpcClient : ISportsObjectsClient
+public class SportsObjectsBookingGrpcClient
 {
     private readonly SportsObjectsBookingService.SportsObjectsBookingServiceClient _client;
 
@@ -15,21 +14,18 @@ public class SportsObjectsBookingGrpcClient : ISportsObjectsClient
 
     public async Task<SportsObjectForBookingResult> ObjectForBookingAsync(
         long sportObjectId,
-        DateTimeOffset startsAt,
-        DateTimeOffset endsAt,
-        CancellationToken cancellationToken = default)
+        int dayOfWeek,
+        string startsAt,
+        string endsAt,
+        CancellationToken cancellationToken)
     {
-        int dayOfWeek = startsAt.LocalDateTime.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)startsAt.LocalDateTime.DayOfWeek;
-        string startTime = startsAt.ToString("HH:mm");
-        string endTime = endsAt.ToString("HH:mm");
-
         ObjectForBookingResponse? response = await _client.ObjectForBookingAsync(
             new ObjectForBookingRequest
             {
                 SportObjectId = sportObjectId,
                 DayOfWeek = dayOfWeek,
-                StartTime = startTime,
-                EndTime = endTime,
+                StartTime = startsAt,
+                EndTime = endsAt,
             },
             cancellationToken: cancellationToken);
         SportsObjectBookingStatus status = response.ObjectStatus switch
@@ -41,9 +37,6 @@ public class SportsObjectsBookingGrpcClient : ISportsObjectsClient
             Status.OutOfSchedule => SportsObjectBookingStatus.OutOfSchedule,
             _ => SportsObjectBookingStatus.OutOfSchedule,
         };
-        return new SportsObjectForBookingResult(
-            status,
-            sportObjectId,
-            (decimal)response.PricePerHour);
+        return new SportsObjectForBookingResult(status, sportObjectId, (decimal)response.PricePerHour);
     }
 }

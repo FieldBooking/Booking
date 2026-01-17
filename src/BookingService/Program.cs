@@ -1,20 +1,22 @@
-using BookingService.Domain.Bookings;
-using Npgsql;
+using BookingService.Api.Grpc;
+using BookingService.Api.Grpc.Services;
+using BookingService.Infrastructure.Extensions;
+using BookingService.Infrastructure.ModelOptions;
+using BookingService.Options;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddGrpc();
+builder.Services.Configure<PostgresConnect>(builder.Configuration.GetSection("Postgres"));
+builder.Services.AddApplicationInjection(builder.Configuration);
 
+builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(
+    builder.Configuration.GetSection("GrpcServer").Get<GrpcServerOptions>()?.ServerPort ?? 7200,
+    listenOptions => listenOptions.Protocols = HttpProtocols.Http2));
+
+builder.Services.AddScoped<ErrorHandlingInterceptor>();
+builder.Services.AddGrpc(options => options.Interceptors.Add<ErrorHandlingInterceptor>());
 WebApplication app = builder.Build();
 
-const string connString = "fdg"; // вынести в extension позже
-
-var dataSourceBuilder = new NpgsqlDataSourceBuilder(connString); // вынести в extension позже
-dataSourceBuilder.MapEnum<BookingStatus>("booking_status"); // вынести в extension позже
-
-app.MapGet(
-    "/",
-    () =>
-        "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
-
+app.MapGrpcService<BookingGrpcService>();
 app.Run();

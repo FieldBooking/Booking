@@ -98,7 +98,7 @@ public class BookingRepository : IBookingRepository
         cmd.Parameters.Add(new NpgsqlParameter<DateTimeOffset>("starts_at", booking.StartsAt));
         cmd.Parameters.Add(new NpgsqlParameter<DateTimeOffset>("ends_at", booking.EndsAt));
         cmd.Parameters.Add(new NpgsqlParameter<long>("amount", booking.Amount));
-        cmd.Parameters.Add(new NpgsqlParameter<BookingStatus>("status", BookingStatus.Created));
+        cmd.Parameters.Add(new NpgsqlParameter<BookingStatus>("status", booking.Status));
 
         await using NpgsqlDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))

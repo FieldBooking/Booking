@@ -79,9 +79,9 @@ public class Booking
                 break;
             case BookingStatus.PaymentInProgress:
                 Status = BookingStatus.CancelRequestedDuringPayment;
-                break;
+                break; // это спецом чтобы не было гонки брони(типо один отменил, но оплата все еще висит, а другой уже пытается забронить)
             case BookingStatus.CancelRequestedDuringPayment:
-                break;
+                throw new InvalidBookingStateException(Id, Status);
             default:
                 throw new ArgumentOutOfRangeException($"Cannot request cancel from status {Status}.");
         }
