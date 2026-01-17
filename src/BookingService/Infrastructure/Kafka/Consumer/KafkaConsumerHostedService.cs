@@ -5,22 +5,19 @@ namespace BookingService.Infrastructure.Kafka.Consumer;
 public class KafkaConsumerHostedService : BackgroundService
 {
     private readonly IKafkaConsumerService _consumer;
-    private readonly ILogger<KafkaConsumerHostedService> _logger;
     private readonly KafkaOptions _options;
 
     public KafkaConsumerHostedService(
         IKafkaConsumerService consumer,
-        IOptions<KafkaOptions> options,
-        ILogger<KafkaConsumerHostedService> logger)
+        IOptions<KafkaOptions> options)
     {
         _consumer = consumer;
         _options = options.Value;
-        _logger = logger;
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("KafkaConsumerHostedService started");
-        return _consumer.ConsumeLoopAsync(_options.PaymentResultTopic, stoppingToken);
+        await Task.Yield();
+        await _consumer.ConsumeLoopAsync(_options.PaymentResultTopic, stoppingToken);
     }
 }

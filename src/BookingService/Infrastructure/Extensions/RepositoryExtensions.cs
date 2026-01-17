@@ -23,7 +23,6 @@ public static class RepositoryExtensions
         });
 
         services.AddScoped<IBookingRepository, BookingRepository>();
-        services.AddScoped<IBookingInboxRepository, BookingInboxRepository>();
         return services;
     }
 }

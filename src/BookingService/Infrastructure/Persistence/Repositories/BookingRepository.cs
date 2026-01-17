@@ -117,7 +117,7 @@ public class BookingRepository : IBookingRepository
                              payment_correlation_id = @corr,
                              payment_io_channel = @io,
                              updated_at = now()
-                           where id = @id and status = 'Created'::booking_status
+                           where id = @id and status = 'created'::booking_status
                            returning id, sports_object_id, starts_at, ends_at, amount, status, created_at, updated_at;
                            """;
 
@@ -154,7 +154,7 @@ public class BookingRepository : IBookingRepository
                            where id = @id
                              and payment_correlation_id = @corr
                              and payment_io_channel = @io
-                             and status in ('PaymentInProgress'::booking_status, 'CancelRequestedDuringPayment'::booking_status)
+                             and status in ('payment_in_progress'::booking_status, 'cancel_requested_during_payment'::booking_status)
                            returning id, sports_object_id, starts_at, ends_at, amount, status, created_at, updated_at;
                            """;
 

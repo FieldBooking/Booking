@@ -4,8 +4,7 @@ namespace BookingService.Application.Exceptions;
 
 public class InvalidBookingStateException : Exception
 {
-    public InvalidBookingStateException(long bookingId, BookingStatus status, string? message = null)
-        : base(message ?? $"Invalid booking state: bookingId={bookingId}, status={status}")
+    public InvalidBookingStateException(long bookingId, BookingStatus status, string? message = null) : base(message ?? $"Invalid booking state: bookingId={bookingId}, status={status}")
     {
         BookingId = bookingId;
         Status = status;

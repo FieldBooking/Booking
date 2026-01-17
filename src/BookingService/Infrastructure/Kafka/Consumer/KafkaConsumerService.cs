@@ -11,8 +11,7 @@ public class KafkaConsumerService : IKafkaConsumerService
 
     public KafkaConsumerService(
         IOptions<KafkaOptions> options,
-        IKafkaMessageHandler handler,
-        ILogger<KafkaConsumerService> logger)
+        IKafkaMessageHandler handler)
     {
         _options = options.Value;
         var config = new ConsumerConfig

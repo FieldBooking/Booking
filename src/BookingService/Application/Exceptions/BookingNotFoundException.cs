@@ -2,8 +2,7 @@
 
 public class BookingNotFoundException : Exception
 {
-    public BookingNotFoundException(long bookingId)
-        : base($"Booking not found: {bookingId}")
+    public BookingNotFoundException(long bookingId) : base($"Booking not found: {bookingId}")
     {
         BookingId = bookingId;
     }

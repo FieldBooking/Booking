@@ -2,8 +2,7 @@
 
 public class SlotBusyException : Exception
 {
-    public SlotBusyException(long sportsObjectId, DateTimeOffset startsAt, DateTimeOffset endsAt, Exception? inner = null)
-        : base($"Slot is busy for sportObjectId={sportsObjectId} [{startsAt:o}..{endsAt:o}]", inner)
+    public SlotBusyException(long sportsObjectId, DateTimeOffset startsAt, DateTimeOffset endsAt, Exception? inner = null) : base($"Slot is busy for sportObjectId={sportsObjectId} [{startsAt:o}..{endsAt:o}]", inner)
     {
         SportsObjectId = sportsObjectId;
         StartsAt = startsAt;

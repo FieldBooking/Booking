@@ -2,6 +2,7 @@
 using BookingService.Infrastructure.Grpc;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using System.Globalization;
 
 namespace BookingService.Api.Grpc.Services;
 
@@ -26,9 +27,9 @@ public sealed class BookingGrpcService : BookingGrpc.BookingGrpcBase
 
     public override async Task<CreateBookingResponse> CreateBooking(CreateBookingRequest request, ServerCallContext context)
     {
-        var date = DateOnly.ParseExact(request.Date, "yyyy-MM-dd");
-        var start = TimeOnly.ParseExact(request.StartTime, "hh:mm");
-        var end = TimeOnly.ParseExact(request.EndTime, "hh:mm");
+        var date = DateOnly.ParseExact(request.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var start = TimeOnly.ParseExact(request.StartTime, "HH:mm", CultureInfo.InvariantCulture);
+        var end = TimeOnly.ParseExact(request.EndTime, "HH:mm", CultureInfo.InvariantCulture);
 
         Domain.Bookings.Booking saved = await _app.CreateAsync(
             request.SportsObjectId,

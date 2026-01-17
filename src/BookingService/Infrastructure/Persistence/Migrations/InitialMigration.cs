@@ -40,21 +40,6 @@ public class InitialMigration : Migration
                         updated_at timestamptz not null default now()
                     );
 
-                    create table if not exists booking_inbox
-                    (
-                        id bigint generated always as identity primary key,
-                    
-                        io_channel text not null,
-                        correlation_id text not null,
-                        event_type text not null,
-                    
-                        booking_id bigint not null references bookings(id) on delete cascade,
-                    
-                        received_at timestamptz not null default now(),
-                    
-                        unique (io_channel, correlation_id, event_type)
-                    );
-
                     alter table bookings
                     add constraint bookings_no_overlap
                     exclude using gist
@@ -69,7 +54,6 @@ public class InitialMigration : Migration
     public override void Down()
     {
         Execute.Sql("""
-                        drop table if exists booking_inbox;
                         drop table if exists bookings;
                         drop type if exists booking_status;
                     """);

@@ -28,7 +28,6 @@ public class PaymentResultHandler : IKafkaMessageHandler
         };
         if (confirmed is null) return;
 
-        // await inbox.InsertAsync(evt.EventType, evt.BookingId, evt.CorrelationId, evt.IoChannel, cancellationToken);
         await _booking.ApplyOrCancelPaymentForceAsync(evt.BookingId, evt.CorrelationId, evt.IoChannel, confirmed.Value, cancellationToken);
     }
 }
